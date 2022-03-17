@@ -1,4 +1,4 @@
-"Ruzne doplnujici funkce a exceptions"
+"Ruzne funkce potrebne pro InvestSimulator"
 
 from datetime import datetime
 
