@@ -1,5 +1,5 @@
 # Investing Simulator
- This is a library for simulating investing on historic or fictionary data
+ A library for simulating investing on historic or fictionary data
  
  ## Getting started
  First, clone the repository. Then find the file invest_simulator.py and copy it to you working folder.
@@ -23,6 +23,6 @@
  and `nakup()`, which buys stocks for the current market price in the simulation. You can specify the
  amount of cash to be used for the purchase, but by default the simulator will use all the cash.
  
- ### `pridej_automaticky_nakup(mesic, den=1)`
+ #### `pridej_automaticky_nakup(mesic, den=1)`
  Prida datum, kdy se kazdy rok automaticky nakoupi za veskerou hotovost.
  
