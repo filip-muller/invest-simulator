@@ -1,7 +1,7 @@
 import csv
 from datetime import datetime, timedelta
 
-from misc import max_dnu_mesic, to_datetime, max_dnu_pristi_mesic
+# from misc import max_dnu_mesic, to_datetime, max_dnu_pristi_mesic
 
 
 class InvestSimulator:
@@ -15,15 +15,23 @@ class InvestSimulator:
                  zacatek=None,       # string, format je YYYY-MM-DD
                  konec=None,         # string, format je YYYY-MM-DD
                  zlomek=True,        # zda lze koupit pouze zlomek akcie
-                 den_vyplaty=15,     # den v mesici, kdy se pripise mesicni castka
                  koef_ceny=1,        # cislo, kterym se vynasobi vsechny ceny v 'data'
+                 den_vyplaty=15,     # den v mesici, kdy se pripise mesicni castka
                  ):
+        """data je dictionary s info a cene, 
+        rocni_castka je castka pripsana kazdy rok k hotovosti,
+        zacatek a konec umoznuje specifikovat custom zacatecni a konecne
+        datum ve formatu YYYY-MM-DD,
+        zlomek urcuje, zda lze nakupovat i pouze zlomky akcii,
+        koef_ceny je hodnota, kterou se pripadne vynasobi vsechny ceny v datech,
+        den_vyplaty je den v mesici, kdy se pripise pravidelna mesicni castka"""
 
         if not 1 <= den_vyplaty <= 28:
             raise ValueError("Den vyplaty musi byt mezi 1 a 28")
         if koef_ceny <= 0:
             raise ValueError("koef_ceny musi byt kladny")
 
+        # pripadne upravi ceny podle koeficientu
         if koef_ceny != 1:
             self.data = {k: v*koef_ceny for k, v in data.items()}
         else:
@@ -36,6 +44,8 @@ class InvestSimulator:
         konec_dat = list_dat[-1]
         del list_dat
 
+        # zkontroluje jestli je custom zacatecni datum platny
+        # a pripadne ho nastavi
         if zacatek is not None:
             if len(zacatek) != 10 or zacatek[2] in ['-', '/', '\\', ':', '.']:
                 raise ValueError(
@@ -71,7 +81,8 @@ class InvestSimulator:
         self.akcie = 0      # pocet drzenych akcii, muze byt i desetinne
         self.dny = 0        # pocet dnu, ktere ubehly od zacatku simulace
         self.vyplaceno = 0  # pocet mesicnich castek, ktere byly vyplaceny
-        # list tuplu obsahujicich datum (string) a castku pro vsechny nakupy
+        # list dictu {"datum": datum obchodu, "castka": castka, za kterou bylo nakoupeno,
+        # "cena": cena, za kterou bylo nakoupeno} pro vsechny uskutecnene nakupy
         self.nakupy = []
         # list int tuplu (month, day), kdy se ma automaticky nakupovat
         self.automaticke_nakupy = []
@@ -157,7 +168,7 @@ class InvestSimulator:
     @property
     def hodnota(self) -> float:
         """Hodnota portfolia spolu s hotovosti, zaokrouhlena na 3 des. mista"""
-        return round(self.akcie * self.data[self.posledni_platne_datum] + self.hotovost, 3)
+        return round(self.akcie * self.cena + self.hotovost, 3)
 
     @property
     def datum_str(self):
@@ -165,7 +176,7 @@ class InvestSimulator:
         return self.datum.strftime("%Y-%m-%d")
 
     @property
-    def posledni_platne_datum(self) -> datetime.datetime:
+    def posledni_platne_datum(self) -> str:
         """Posledni datum od soucasneho data simulace, kdy byl obchodni den"""
         date = self.datum
         while date.strftime("%Y-%m-%d") not in self.data:
@@ -173,7 +184,7 @@ class InvestSimulator:
         return date.strftime("%Y-%m-%d")
 
     @property
-    def pristi_platne_datum(self) -> datetime.datetime:
+    def pristi_platne_datum(self) -> str:
         """Nejblizsi datum od soucasneho data simulace, kdy bude obchodni den"""
         date = self.datum
         assert date <= self.konec   # pouze kontrola, nedulezite
@@ -187,21 +198,26 @@ class InvestSimulator:
         """Vypis vsech nakupu, ktere se na portfoliu za celou dobu provedly"""
         result = ""
         for n in self.nakupy:
-            result += f"{n[0]}: ${round(n[1])}\n"
+            result += f"{n['datum']}: ${round(n['castka'])} (cena: {n['cena']})\n"
         return result[:-1]
 
     @property
-    def cena(self, mode="pristi") -> float:
-        """Soucasna cena na trhu, pripadne cena pristi obchodni den
-
-        Pomoci nastaveni parametru mode na 'posledni' lze v neobchodni dny
-        ziskat cenu posledni uplynuly obchodni den misto nejblizsiho budouciho"""
-        if mode == "pristi":
-            return self.data[self.pristi_platne_datum]
-        if mode == "posledni":
-            return self.data[self.posledni_platne_datum]
-        raise ValueError(
-            "neplatna hodnota argumentu mode, muze byt 'pristi' nebo 'posledni'")
+    def cena(self) -> float:
+        """Soucasna cena na trhu, pripadne cena pristi obchodni den"""
+        return self.data[self.pristi_platne_datum]
+        
+    @property
+    def posledni_platna_cena(self) -> float:
+        """Soucasna cena na trhu, pripadne cena posledni obchodni den"""
+        return self.data[self.posledni_platne_datum]
+        
+    @property
+    def celkovy_prijem(self):
+        return self.vyplaceno * self.mesicni_castka
+    
+    @property
+    def pridana_hodnota(self):
+        return self.hodnota - self.celkovy_prijem
 
     def __str__(self):
         return (f"Soucasne datum: {self.datum_str}\n"
@@ -283,18 +299,19 @@ class InvestSimulator:
         if castka < 0:
             raise ValueError("Nelze nakoupit za zapornou castku")
 
-        self.nakupy.append((self.datum_str, castka,))
-
         if self.zlomek:
-            self.akcie += castka / self.data[self.posledni_platne_datum]
-            self.hotovost -= castka
-            return
-
-        self.akcie += castka // self.data[self.posledni_platne_datum]
-        self.hotovost -= castka - \
-            castka % self.data[self.posledni_platne_datum]
-
-        assert self.hotovost >= 0
+            koupenych_akcii = castka / self.cena
+            nakoupeno_za = castka
+        else:
+            koupenych_akcii = castka // self.cena
+            nakoupeno_za = castka - castka % self.cena
+            
+        self.akcie += koupenych_akcii
+        self.hotovost -= nakoupeno_za
+        
+        self.nakupy.append(({"datum": self.datum_str,
+                             "castka": nakoupeno_za,
+                             "cena": self.cena}))
 
     def simul(self, nakup_kazdy_den=False):
         """Dosimuluje vyvoj az do posledniho dne dat, provadi nastavene nakupy.
@@ -327,6 +344,19 @@ class KonecSimulace(Exception):
     """Vyjimka, kterou InvestSimulator vyvola po dosazeni posledniho data"""
     pass
 
+# -----------------------------------------------------
+# nasleduji pouze pomocne funkce vyuzivane tridou
+# -----------------------------------------------------
+def to_datetime(datum: str, format='%Y-%m-%d'):
+    return datetime.strptime(datum, format)
 
-# TODO
-# - tvorba dat z databaze
+def max_dnu_pristi_mesic(mesic, rok):
+    dny_mesicu = [None, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
+    dalsi_mesic = mesic + 1 if mesic < 12 else 1
+    if dalsi_mesic == 2 and rok % 4 == 0 and (not rok % 100 == 0 or rok % 400 == 0):
+        dny_mesicu[2] += 1
+    return dny_mesicu[dalsi_mesic]
+
+def max_dnu_mesic(mesic):
+    dny_mesicu = [None, 31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
+    return dny_mesicu[mesic]
