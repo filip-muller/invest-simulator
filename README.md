@@ -25,6 +25,71 @@
  
  ## Metody třídy InvestSimulator
  
- ##### `pridej_automaticky_nakup(mesic, den=1)`
+ #### `__init__(data: dict, rocni_castka: int, puvodni_castka=0, zacatek=None, konec=None, zlomek=True, koef_ceny=1, den_vyplaty=15)`
+`data` je dictionary s info a cene vygenerovany nekterou z classmethods, 
+`rocni_castka` je castka pripsana kazdy rok k hotovosti,
+`puvodni_castka` je hotovost na zacatku simulace,
+`zacatek` a konec umoznuje specifikovat custom zacatecni a konecne datum ve formatu YYYY-MM-DD,
+`zlomek` urcuje, zda lze nakupovat i pouze zlomky akcii,
+`koef_ceny` je hodnota, kterou se pripadne vynasobi vsechny ceny v datech,
+`den_vyplaty` je den v mesici, kdy se pripise pravidelna mesicni castka
+ 
+ #### `pridej_automaticky_nakup(mesic, den=1)`
  Prida datum, kdy se kazdy rok automaticky nakoupi za veskerou hotovost.
  
+ #### `dalsi_den(opakovani=1)`
+Posune simulaci o jeden den dopredu.
+Pokud dojde na konec simulacniho obdobi, vyvola exception KonecSimulace.
+Pocet dni lze uzpusobit pomoci parametru 'opakovani'.
+Aktualizuje datum a ubehlou dobu a pokud dojde na den,
+kdy se ma vyplacet pravidelna mesicni castka, zvysi hotovost.
+
+#### `dalsi_mesic(opakovani=1)`
+Posune simulaci o jeden mesic dopredu.
+Pomoci parametru opakovani lze uzpusobit pocet mesicu.
+
+#### `dalsi_rok(opakovani=1)`
+Posune simulaci o jeden rok dopredu.
+
+#### `nakup(castka=None)`
+Za momentální tržní cenu v simulaci nakoupí akcie v hodnote `castka`.
+Pokud je metoda zavolana bez parametru `castka`,
+nakoupi se za veskerou drzenou hotovost. Pokud by
+mel nakup probehnout v neobchodni den, metoda ho v tuto
+chvili provede tak, jakoby se stal v nejblizsi nadchazejici
+obchodni den. Metoda funguje spravne i pokud `castka=0`,
+v takovem pripade se nestane nic a obchod se nezaznamena. 
+ 
+#### `simul(nakup_kazdy_den)`
+Dosimuluje vyvoj az do posledniho dne dat, provadi nastavene nakupy.
+Pomoci parametru `nakup_kazdy_den`, lze urcit, zda se ma kazdy den
+nakoupit za vsechny dostupne penize.
+
+#### `simul_do(rok: int, mesic=1, den=1)`
+Simuluje vyvoj do urceneho data.
+
+## Metody pro tvorbu dat
+
+#### `InvestSimulator.vytvor_data_csv(csv_path, date_format="%Y-%m-%d", date_column=0, cena_column=1) -> dict`
+Ze csv vytvori data, ktera se daji pouzit pro vytvoreni instance InvestSimulator.
+
+Vraci dictionary, ktery je ve spravnem formatu pro parametr `data`
+potrebny pro vytvoreni instance tridy.
+Pomoci parametru `date_column` a `close_column` lze specifikovat,
+z ktereho sloupce souboru ma brat jaka data. Sloupce se pocitaji
+od 0, takze prvni sloupec je sloupec 0, druhy cislo 1 atd.
+V parametru `date_format` lze speficikovat fomat data pouzivany
+v csv souboru. Ten je automaticky preveden na spravny format.
+Vyuziva stejny styl zapisu formatu jako modul [datetime](https://docs.python.org/3/library/datetime.html#strftime-and-strptime-format-codes).
+
+#### `InvestSimulator.vytvor_data_linearni(let_zpatky: int, cagr_procent=10, pocatecni_cena=1000) -> dict`
+Vytvori data, kterych cena roste linearne, stejnou hodnotou kazdy den.
+
+Parametr `let_zpatky` urcuje, kolik let se ma zpetne nasimulovat. Data
+zacinaji datem o tento pocet let zpatky a cenou urcenou parametrem
+`pocatecni_cena` (default=1000). Na konci simulace se cena linearnim rustem
+dostane do takoveho stavu, aby byl za obdobi cagr specifikovany v parametru
+`cagr_procent` (default je 10 %).
+
+#### `InvestSimulator.vytvor_data_exponencialni(let_zpatky: int, cagr_procent=10, pocatecni_cena=1000) -> dict`
+Vytvori data s odpovidajicim procentnim rustem kazdy den.
