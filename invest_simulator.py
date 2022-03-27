@@ -1,5 +1,6 @@
 import csv
 from datetime import datetime, timedelta
+from multiprocessing.sharedctypes import Value
 
 # from misc import max_dnu_mesic, to_datetime, max_dnu_pristi_mesic
 
@@ -12,6 +13,7 @@ class InvestSimulator:
     def __init__(self,
                  data: dict,         # na indexu "YYYY-MM-DD" obsahuje cenu daneho dne
                  rocni_castka: int,  # rocni castka, kterou ma investor k dispozici
+                 puvodni_castka=0,   # hotovost, s kterou simulace zacina
                  zacatek=None,       # string, format je YYYY-MM-DD
                  konec=None,         # string, format je YYYY-MM-DD
                  zlomek=True,        # zda lze koupit pouze zlomek akcie
@@ -20,6 +22,7 @@ class InvestSimulator:
                  ):
         """data je dictionary s info a cene, 
         rocni_castka je castka pripsana kazdy rok k hotovosti,
+        puvodni_castka je hotovost na zacatku simulace,
         zacatek a konec umoznuje specifikovat custom zacatecni a konecne
         datum ve formatu YYYY-MM-DD,
         zlomek urcuje, zda lze nakupovat i pouze zlomky akcii,
@@ -30,6 +33,8 @@ class InvestSimulator:
             raise ValueError("Den vyplaty musi byt mezi 1 a 28")
         if koef_ceny <= 0:
             raise ValueError("koef_ceny musi byt kladny")
+        if puvodni_castka < 0:
+            raise ValueError("puvodni castka nemuze byt zaporna")
 
         # pripadne upravi ceny podle koeficientu
         if koef_ceny != 1:
@@ -77,7 +82,7 @@ class InvestSimulator:
 
         # penize dostupne k investovani,
         # kazdy mesic se zvysi o 'mesicni_castka'
-        self.hotovost = 0
+        self.hotovost = puvodni_castka
         self.akcie = 0      # pocet drzenych akcii, muze byt i desetinne
         self.dny = 0        # pocet dnu, ktere ubehly od zacatku simulace
         self.vyplaceno = 0  # pocet mesicnich castek, ktere byly vyplaceny
@@ -92,7 +97,7 @@ class InvestSimulator:
         pass
 
     @classmethod
-    def vytvor_data_csv(cls, csv_path, date_format="%Y-%m-%d", date_column=0, close_column=1) -> dict:
+    def vytvor_data_csv(cls, csv_path, date_format="%Y-%m-%d", date_column=0, cena_column=1) -> dict:
         """ Ze csv vytvori data, ktera se daji pouzit pro vytvoreni instance.
 
         Vraci dictionary, ktery je ve spravnem formatu pro parametr 'data'
@@ -117,7 +122,7 @@ class InvestSimulator:
                 if preformatovat_datum:
                     row[date_column] = (datetime.strptime(
                         row[date_column], date_format)).strftime('%Y-%m-%d')
-                result[row[date_column]] = float(row[close_column])
+                result[row[date_column]] = float(row[cena_column])
 
         return result
 
@@ -126,7 +131,7 @@ class InvestSimulator:
         """Vytvori data, kterych cena roste linearne, stejnou hodnotou kazdy den.
 
         Parametr let_zpatky urcuje, kolik let se ma zpetne nasimulovat. Data
-        zacinaji datem o tento pocet let zpatky a cenou urcenou paramentrem
+        zacinaji datem o tento pocet let zpatky a cenou urcenou parametrem
         pocatecni_cena (default=1000). Na konci simulace se cena linearnim rustem
         dostane do takoveho stavu, aby byl za obdobi cagr specifikovany v parametru
         cagr_procent (default je 10 %)"""
@@ -282,9 +287,9 @@ class InvestSimulator:
         """ Za momentální tržní cenu v simulaci nakoupí akcie v hodnote 'castka'.
 
             Pokud je metoda zavolana bez parametru castka,
-            nakoupi se za veskerou drzenou hotovost.Pokud by
-            mel nakup probehnout v neobchodni, metoda ho v tuto
-            chvili provede tak, jakoby se stal v posledni uplynuly
+            nakoupi se za veskerou drzenou hotovost. Pokud by
+            mel nakup probehnout v neobchodni den, metoda ho v tuto
+            chvili provede tak, jakoby se stal v nejblizsi nadchazejici
             obchodni den. Metoda funguje spravne i pokud castka=0,
             v takovem pripade se nestane nic a obchod se nezaznamena. 
         """
@@ -316,7 +321,7 @@ class InvestSimulator:
     def simul(self, nakup_kazdy_den=False):
         """Dosimuluje vyvoj az do posledniho dne dat, provadi nastavene nakupy.
         Pomoci parametru nakup_kazdy_den, lze urcit, zda se ma kazdy den
-        nakoupit za vsechny dostupne penize"""
+        nakoupit za vsechny dostupne penize."""
         while True:
             try:
                 self.dalsi_den()
