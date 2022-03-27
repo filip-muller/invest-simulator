@@ -29,9 +29,12 @@ class InvestSimulator:
         else:
             self.data = dict(data)
 
+        # najde prvni a posledni datum
         list_dat = list(self.data)
         list_dat = sorted(list_dat, key=lambda x: to_datetime(x))
-        zacatek_dat, konec_dat = list_dat[0], list_dat[-1]
+        zacatek_dat = list_dat[0]
+        konec_dat = list_dat[-1]
+        del list_dat
 
         if zacatek is not None:
             if len(zacatek) != 10 or zacatek[2] in ['-', '/', '\\', ':', '.']:
@@ -54,8 +57,6 @@ class InvestSimulator:
             self.konec = to_datetime(konec)
         else:
             self.konec = to_datetime(konec_dat)
-
-        del list_dat
 
         # momentalni datum v simulaci
         self.datum = self.zacatek
