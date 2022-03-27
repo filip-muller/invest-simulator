@@ -17,7 +17,7 @@ class InvestSimulator:
                  zlomek=True,        # zda lze koupit pouze zlomek akcie
                  den_vyplaty=15,     # den v mesici, kdy se pripise mesicni castka
                  koef_ceny=1,        # cislo, kterym se vynasobi vsechny ceny v 'data'
-                 ) -> None:
+                 ):
 
         if not 1 <= den_vyplaty <= 28:
             raise ValueError("Den vyplaty musi byt mezi 1 a 28")
@@ -154,7 +154,7 @@ class InvestSimulator:
         return result
 
     @property
-    def hodnota(self):
+    def hodnota(self) -> float:
         """Hodnota portfolia spolu s hotovosti, zaokrouhlena na 3 des. mista"""
         return round(self.akcie * self.data[self.posledni_platne_datum] + self.hotovost, 3)
 
@@ -164,7 +164,7 @@ class InvestSimulator:
         return self.datum.strftime("%Y-%m-%d")
 
     @property
-    def posledni_platne_datum(self):
+    def posledni_platne_datum(self) -> datetime.datetime:
         """Posledni datum od soucasneho data simulace, kdy byl obchodni den"""
         date = self.datum
         while date.strftime("%Y-%m-%d") not in self.data:
@@ -172,7 +172,7 @@ class InvestSimulator:
         return date.strftime("%Y-%m-%d")
 
     @property
-    def pristi_platne_datum(self):
+    def pristi_platne_datum(self) -> datetime.datetime:
         """Nejblizsi datum od soucasneho data simulace, kdy bude obchodni den"""
         date = self.datum
         assert date <= self.konec   # pouze kontrola, nedulezite
@@ -190,7 +190,7 @@ class InvestSimulator:
         return result[:-1]
 
     @property
-    def cena(self, mode="pristi"):
+    def cena(self, mode="pristi") -> float:
         """Soucasna cena na trhu, pripadne cena pristi obchodni den
 
         Pomoci nastaveni parametru mode na 'posledni' lze v neobchodni dny
