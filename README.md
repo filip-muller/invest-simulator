@@ -10,7 +10,7 @@
  is to generate them from a csv file using the method `InvestSimulator.vytvor_data_csv()`. This method takes
  the path to your csv file as the first argument (e.g. `"data.csv"`). The next argument specifies the format of
  the date being used in your csv file. It uses the same codes as the [datetime module](https://docs.python.org/3/library/datetime.html#strftime-and-strptime-format-codes). The next two arguments specify, which column of the csv includes the date and which includes the price.
- The columns are counted from 0.
+ The columns are counted from 0. More info viz [Metody pro tvorbu dat](https://github.com/filip-muller/invest-simulator#metody-t%C5%99%C3%ADdy-investsimulator)
  
  ### Creating the simulator
  Once you have generated the data, you can create a new simulator. Create a new instance of the class
