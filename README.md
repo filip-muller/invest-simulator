@@ -23,6 +23,8 @@
  and `nakup()`, which buys stocks for the current market price in the simulation. You can specify the
  amount of cash to be used for the purchase, but by default the simulator will use all the cash.
  
+ ## Metody třídy InvestSimulator
+ 
  #### `pridej_automaticky_nakup(mesic, den=1)`
  Prida datum, kdy se kazdy rok automaticky nakoupi za veskerou hotovost.
  
