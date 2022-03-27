@@ -50,7 +50,7 @@ class SimulatorGUI:
         """
         self.btn_nakup = tk.Button(
             self.app, text="Nakup", command=self.btn_nakup_click, font="Helvetica 11 bold")
-        self.btn_nakup.place(relx=0.5, rely=0.5, anchor="center")
+        self.btn_nakup.place(relx=0.5, rely=0.52, anchor="center")
 
         self.btn_autorun = tk.Button(
             self.app, text="Autorun", command=self.btn_autorun_click, font="Helvetica 9 bold")
