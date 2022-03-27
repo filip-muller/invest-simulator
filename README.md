@@ -25,6 +25,6 @@
  
  ## Metody třídy InvestSimulator
  
- #### `pridej_automaticky_nakup(mesic, den=1)`
+ ##### `pridej_automaticky_nakup(mesic, den=1)`
  Prida datum, kdy se kazdy rok automaticky nakoupi za veskerou hotovost.
  
